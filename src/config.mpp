@@ -1,0 +1,72 @@
+module;
+#include <filesystem>
+#include <fstream>
+#include <string>
+
+#include <toml++/toml.hpp>
+#include <raylib.h>
+export module config;
+
+export struct Config
+{
+    // == Display ==
+    int screen_width = 800;
+    int screen_height = 600;
+    int fps = 60;
+};
+
+auto ConfigToToml(const Config& config) -> toml::table
+{
+    toml::table table {
+        {"display", toml::table {
+            {"screen_width", config.screen_width},
+            {"screen_height", config.screen_height},
+            {"fps", config.fps},
+        }},
+    };
+    return table;
+}
+
+auto TomlToConfig(const toml::table& table) -> Config
+{
+    Config config;
+    auto display = table["display"];
+    config.screen_width = display["screen_width"].value_or(800);
+    config.screen_height = display["screen_height"].value_or(600);
+    config.fps = display["fps"].value_or(60);
+    return config;
+}
+
+export auto LoadConfig() -> Config
+{
+    const std::string_view config_path = "./lipoy_config.toml";
+
+    if (!std::filesystem::exists(config_path))
+    {
+        // The config file not exists, return the default
+        Config config;
+
+        // writing the default values
+        std::fstream f;
+        f.open(config_path, std::ios::out);
+        f << ConfigToToml(config);
+        f.close();
+
+        return config;
+    }
+
+    // Read config file
+    toml::table config_table;
+    try
+    {
+        config_table = (toml::table)toml::parse_file(config_path);
+        
+        return TomlToConfig(config_table);
+    }
+    catch (const toml::parse_error& err)
+    {
+        // Failed to parse config, return the default
+        // TraceLog(LOG_ERROR, "Parsing failed:\n%s\n", err);
+        return Config();
+    }
+}

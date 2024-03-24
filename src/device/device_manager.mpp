@@ -1,0 +1,57 @@
+module;
+
+#include <functional>
+#include <vector>
+
+export module device_manager;
+
+// A simple manager that managed the device status
+export class DeviceManager {
+
+    typedef std::function<void(int)> EventCallback;
+
+public:
+    DeviceManager() = default;
+    ~DeviceManager() = default;
+
+    auto GetMode() const { return m_deviceState; }
+
+    void RegisterEventCallback(EventCallback callback) { m_eventCallbacks.push_back(callback); }
+
+    // === POWER MANAGEMENT ===
+
+    // Give the device a power signal, if device is not
+    // running, it will start it up. Otherwise turn it
+    // down. It will not actually turn off the device.
+    //
+    // @param powersw: set the device on/off
+    void PowerSw();
+    
+    // Restart the machine
+    void PowerReset();
+
+    enum DeviceStateType {
+        INITIAL,
+        BIOS,
+        BOOT,
+        RUNTIME,
+        OFF
+    };
+
+    enum DeviceEventType {
+        PowerOnEvent, // Not actually using
+        PowerOffEvent,
+        PowerResetEvent,
+        // ...
+    };
+
+private:
+    DeviceStateType m_deviceState = DeviceStateType::OFF;
+    std::vector<EventCallback> m_eventCallbacks = {};
+
+    void EmitEvent(DeviceEventType eventType) {
+        for (auto& callback : m_eventCallbacks) {
+            callback(static_cast<int>(eventType));
+        }
+    }
+};

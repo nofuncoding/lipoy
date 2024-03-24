@@ -1,0 +1,19 @@
+module;
+
+
+
+export module renderer;
+
+export import :text;
+
+import config;
+
+// TODO
+export class Renderer
+{
+public:
+    Renderer() = default;
+    ~Renderer() = default;
+    void Init(Config config);
+    void Draw();
+};
